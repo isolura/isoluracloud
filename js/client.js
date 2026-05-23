@@ -119,7 +119,7 @@ function initCommissions() {
     await addDoc(collection(db, "commissions"), {
       clientUID: currentUser.uid, clientEmail: currentUser.email,
       displayName, title, description,
-      status: "pending", artUrls: [], fileUrls: [],
+      status: "pending", artUrls: [], fileUrls: [], paid: false,
       createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });
 
