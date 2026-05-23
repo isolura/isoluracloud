@@ -14,8 +14,8 @@ export const imgbbApiKey = "6ba075b43ddc9e0d461a96a795f113b8";
 // Service ID, Template ID, and Public Key from your EmailJS dashboard
 // Template variables used: {{from_name}}, {{message}}, {{commission_title}}
 export const emailjsConfig = {
-  serviceId:  "PASTE-YOUR-SERVICE-ID",
-  templateId: "PASTE-YOUR-TEMPLATE-ID",
-  publicKey:  "PASTE-YOUR-PUBLIC-KEY",
-  adminEmail: "PASTE-ISO-EMAIL-HERE"
+  serviceId:  "service_w694eqc",
+  templateId: "template_s4h1wjg",
+  publicKey:  "8KK_UD-O0UXUuRXeu",
+  adminEmail: "isoslithers@gmail.com"
 };
