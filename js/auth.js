@@ -51,6 +51,8 @@ export function setupAuth(app, db) {
     try {
       if (mode === "signup") {
         await createUserWithEmailAndPassword(auth, email, password);
+        window.location.href = "client.html";
+        return;
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
