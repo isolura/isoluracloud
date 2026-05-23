@@ -6,3 +6,6 @@ export const firebaseConfig = {
   messagingSenderId: "869617091580",
   appId:             "1:869617091580:web:a922fc562b446792ee6879"
 };
+
+// Get a free API key at https://api.imgbb.com
+export const imgbbApiKey = "PASTE-YOUR-IMGBB-API-KEY-HERE";

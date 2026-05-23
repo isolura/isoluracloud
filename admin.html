@@ -65,7 +65,10 @@
     <div class="art-section">
       <h3>Art</h3>
       <div class="art-gallery" id="art-gallery"></div>
-      <input type="file" id="input-art-upload" accept="image/*" multiple style="font-size:0.8rem;margin-bottom:6px;" />
+      <label id="art-upload-label" class="btn-secondary" style="display:inline-block;cursor:pointer;margin-bottom:6px;">
+        Upload image(s)
+        <input type="file" id="input-art-upload" accept="image/*" multiple style="display:none;" />
+      </label>
       <div class="paste-url-row">
         <input type="url" id="input-art-url" placeholder="Or paste an image URL" />
         <button id="btn-add-url" class="btn-primary" style="padding:5px 12px;">Add</button>

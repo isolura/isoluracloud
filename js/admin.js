@@ -4,13 +4,11 @@ import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, deleteDoc, updateDoc,
   onSnapshot, query, where, orderBy, serverTimestamp, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { firebaseConfig, imgbbApiKey } from "./firebase-config.js";
 
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
-const storage = getStorage(app);
 
 let currentUser         = null;
 let currentCommissionId = null;
@@ -65,18 +63,35 @@ function initPage() {
     });
   });
 
-  document.getElementById("input-art-upload").addEventListener("change", async (e) => {
+  const artUploadInput = document.getElementById("input-art-upload");
+  const artUploadLabel = document.getElementById("art-upload-label");
+
+  artUploadInput.addEventListener("change", async (e) => {
     if (!currentCommissionId) return;
     const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    artUploadLabel.textContent = "Uploading…";
+    artUploadInput.disabled = true;
+
     for (const file of files) {
-      const storageRef = ref(storage, `commissions/${currentCommissionId}/${Date.now()}_${file.name}`);
-      const snap = await uploadBytes(storageRef, file);
-      const url  = await getDownloadURL(snap.ref);
-      await updateDoc(doc(db, "commissions", currentCommissionId), {
-        artUrls: arrayUnion(url),
-        updatedAt: serverTimestamp()
-      });
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const res  = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, { method: "POST", body: formData });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error?.message || "Upload failed");
+        await updateDoc(doc(db, "commissions", currentCommissionId), {
+          artUrls: arrayUnion(data.data.url),
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("ImgBB upload error:", err);
+      }
     }
+
+    artUploadLabel.textContent = "Upload image(s)";
+    artUploadInput.disabled = false;
     e.target.value = "";
   });
 
