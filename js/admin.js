@@ -130,6 +130,7 @@ function initPage() {
   initManageAdmins();
   initPortfolio();
   initPrices();
+  initDiscountCodes();
   subscribeCommissions();
 }
 
@@ -592,6 +593,46 @@ function initManageAdmins() {
     const uid = usersSnap.docs[0].id;
     await setDoc(doc(db, "admins", uid), { email });
     document.getElementById("input-admin-email").value = "";
+  });
+}
+
+// ── Discount Codes ──────────────────────────────────────────────────────────
+
+function initDiscountCodes() {
+  onSnapshot(collection(db, "discountCodes"), (snap) => {
+    const list = document.getElementById("discount-code-list");
+    if (!list) return;
+    const codes = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+    if (codes.length === 0) {
+      list.innerHTML = '<p class="empty-state" style="padding:8px 0;">No codes yet.</p>';
+      return;
+    }
+    list.innerHTML = codes.map(c => `
+      <div class="discount-code-row">
+        <span class="discount-code-name">${esc(c.id)}</span>
+        <span class="discount-code-meta">${esc(c.discount)} · ${c.usesLeft} / ${c.totalUses} uses left</span>
+      </div>
+    `).join("");
+  });
+
+  const errorEl = document.getElementById("dc-error");
+  document.getElementById("btn-dc-generate").addEventListener("click", async () => {
+    const code     = document.getElementById("dc-code").value.trim().toLowerCase();
+    const discount = document.getElementById("dc-discount").value.trim();
+    const uses     = parseInt(document.getElementById("dc-uses").value.trim(), 10);
+    errorEl.textContent = "";
+    if (!code)            { errorEl.textContent = "Code is required."; return; }
+    if (!discount)        { errorEl.textContent = "Discount text is required."; return; }
+    if (!uses || uses < 1){ errorEl.textContent = "Enter a valid number of uses."; return; }
+
+    await setDoc(doc(db, "discountCodes", code), {
+      discount, usesLeft: uses, totalUses: uses, createdAt: serverTimestamp()
+    });
+
+    document.getElementById("dc-code").value     = "";
+    document.getElementById("dc-discount").value = "";
+    document.getElementById("dc-uses").value     = "";
   });
 }
 

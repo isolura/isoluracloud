@@ -114,6 +114,20 @@
         <p id="pr-error" class="error-msg" style="text-align:left;margin:0;"></p>
       </div>
     </div>
+    <div class="discount-section" style="margin-top:24px;">
+      <h3>Discount Codes</h3>
+      <div id="discount-code-list"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;">
+        <div style="font-size:0.85rem;color:var(--accent);font-weight:600;text-transform:uppercase;">Generate New Code</div>
+        <input type="text"   id="dc-code"     placeholder="Code (e.g. FRIEND10)" style="border:1px solid var(--accent);border-radius:4px;padding:7px 10px;font-size:0.9rem;background:var(--surface);color:var(--text);outline:none;" />
+        <input type="text"   id="dc-discount" placeholder="Discount text (e.g. 10% off)" style="border:1px solid var(--accent);border-radius:4px;padding:7px 10px;font-size:0.9rem;background:var(--surface);color:var(--text);outline:none;" />
+        <input type="number" id="dc-uses"     placeholder="Number of uses" min="1" style="border:1px solid var(--accent);border-radius:4px;padding:7px 10px;font-size:0.9rem;background:var(--surface);color:var(--text);outline:none;" />
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="btn-dc-generate" class="btn-primary">Generate</button>
+          <p id="dc-error" class="error-msg" style="text-align:left;margin:0;"></p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Manage Admins Tab -->

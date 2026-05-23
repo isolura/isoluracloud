@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, getDoc, onSnapshot,
-  query, where, orderBy, serverTimestamp
+  query, where, orderBy, serverTimestamp, increment, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseConfig, emailjsConfig } from "./firebase-config.js";
 
@@ -12,6 +12,7 @@ const db   = getFirestore(app);
 
 let currentUser   = null;
 let messageUnsubs = {};
+let activeDiscount = null;
 
 // ── Auth guard ──────────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ function initPage() {
   initQueue();
   initPortfolio();
   initPrices();
+  initDiscountCode();
 }
 
 function switchTab(tabName) {
@@ -116,12 +118,28 @@ function initCommissions() {
     const userSnap    = await getDoc(doc(db, "users", currentUser.uid));
     const displayName = userSnap.exists() ? (userSnap.data().displayName || "") : "";
 
-    await addDoc(collection(db, "commissions"), {
+    const commissionData = {
       clientUID: currentUser.uid, clientEmail: currentUser.email,
       displayName, title, description,
       status: "pending", artUrls: [], fileUrls: [], paid: false,
       createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-    });
+    };
+    if (activeDiscount) {
+      commissionData.discountCode = activeDiscount.code;
+      commissionData.discountText = activeDiscount.discountText;
+    }
+
+    const batch = writeBatch(db);
+    const newRef = doc(collection(db, "commissions"));
+    batch.set(newRef, commissionData);
+    if (activeDiscount) {
+      batch.update(doc(db, "discountCodes", activeDiscount.code), { usesLeft: increment(-1) });
+    }
+    await batch.commit();
+
+    activeDiscount = null;
+    document.getElementById("discount-result").textContent = "";
+    document.getElementById("discount-code-input").value   = "";
 
     notifyAdmin("New commission request", `${displayName || currentUser.email} submitted: "${title}"\n\n${description}`);
 
@@ -155,6 +173,7 @@ function renderCommissions(commissions) {
         <div>
           <div class="card-title">${esc(c.title)}</div>
           <div class="card-meta">Requested ${fmtDate(c.createdAt)} · Updated ${fmtDate(c.updatedAt)}</div>
+            ${c.discountText ? `<div class="card-meta" style="color:var(--accent);">Discount applied: ${esc(c.discountText)}</div>` : ''}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
@@ -317,6 +336,30 @@ function initPrices() {
           : ''}</td>
       </tr>
     `).join("");
+  });
+}
+
+// ── Discount Code ───────────────────────────────────────────────────────────
+
+function initDiscountCode() {
+  const resultEl = document.getElementById("discount-result");
+  document.getElementById("btn-apply-discount").addEventListener("click", async () => {
+    const raw  = document.getElementById("discount-code-input").value.trim();
+    const code = raw.toLowerCase();
+    resultEl.className = "discount-result";
+    resultEl.textContent = "Checking…";
+    if (!code) { resultEl.textContent = ""; return; }
+
+    const snap = await getDoc(doc(db, "discountCodes", code));
+    if (!snap.exists() || snap.data().usesLeft <= 0) {
+      resultEl.className = "discount-result invalid";
+      resultEl.textContent = "Invalid or expired code.";
+      activeDiscount = null;
+      return;
+    }
+    activeDiscount = { code, discountText: snap.data().discount };
+    resultEl.className = "discount-result valid";
+    resultEl.textContent = `Code applied: ${snap.data().discount}`;
   });
 }
 
