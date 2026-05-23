@@ -45,5 +45,14 @@ service cloud.firestore {
       allow read:  if isSignedIn();
       allow write: if isAdmin();
     }
+
+    match /adminNotes/{uid} {
+      allow read, write: if isAdmin();
+    }
+
+    match /discountCodes/{code} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin();
+    }
   }
 }
