@@ -521,17 +521,26 @@ function renderAdminPrices() {
     input.addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      input.disabled = true;
       const label = input.parentElement;
       const origText = label.childNodes[0].textContent.trim();
       label.childNodes[0].textContent = " Uploading…";
       const url = await uploadToImgbb(file);
       label.childNodes[0].textContent = " " + origText;
-      if (!url) return;
+      input.disabled = false;
+      e.target.value = "";
+      if (!url) {
+        const errEl = document.createElement("p");
+        errEl.className = "error-msg";
+        errEl.textContent = "Upload failed. Please try again.";
+        label.after(errEl);
+        setTimeout(() => errEl.remove(), 3000);
+        return;
+      }
       const updated = priceItems.map(p =>
         p.id === input.dataset.itemId ? { ...p, exampleImageUrl: url } : p
       );
       await setDoc(doc(db, "settings", "prices"), { items: updated });
-      e.target.value = "";
     });
   });
 }
