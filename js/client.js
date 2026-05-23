@@ -269,7 +269,7 @@ function initPrices() {
     const items = snap.exists() ? (snap.data().items || []) : [];
     const tbody = document.getElementById("price-rows");
     if (items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No prices listed yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No prices listed yet.</td></tr>';
       return;
     }
     tbody.innerHTML = items.map(item => `
@@ -277,6 +277,11 @@ function initPrices() {
         <td>${esc(item.name)}</td>
         <td class="price-desc">${esc(item.description)}</td>
         <td class="price-amount">${esc(item.price)}</td>
+        <td>${item.exampleImageUrl
+          ? `<a href="${esc(item.exampleImageUrl)}" target="_blank" rel="noopener">
+               <img src="${esc(item.exampleImageUrl)}" class="price-example-thumb" alt="example" />
+             </a>`
+          : ''}</td>
       </tr>
     `).join("");
   });

@@ -486,7 +486,7 @@ function initPrices() {
 function renderAdminPrices() {
   const tbody = document.getElementById("price-rows");
   if (priceItems.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No prices added yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No prices added yet.</td></tr>';
     return;
   }
   tbody.innerHTML = priceItems.map(item => `
@@ -494,6 +494,18 @@ function renderAdminPrices() {
       <td>${esc(item.name)}</td>
       <td class="price-desc">${esc(item.description)}</td>
       <td class="price-amount">${esc(item.price)}</td>
+      <td>
+        ${item.exampleImageUrl
+          ? `<a href="${esc(item.exampleImageUrl)}" target="_blank" rel="noopener">
+               <img src="${esc(item.exampleImageUrl)}" class="price-example-thumb" alt="example" />
+             </a>`
+          : ''}
+        <label class="price-img-upload-btn" style="display:inline-block;margin-top:4px;cursor:pointer;">
+          ${item.exampleImageUrl ? 'Replace' : '+ Image'}
+          <input type="file" accept=".png,.gif,.jpg,.jpeg,.webp" data-item-id="${item.id}"
+                 class="price-img-input" style="display:none;" />
+        </label>
+      </td>
       <td><button class="btn-remove-admin" data-id="${item.id}">Remove</button></td>
     </tr>
   `).join("");
@@ -502,6 +514,24 @@ function renderAdminPrices() {
     btn.addEventListener("click", async () => {
       const updated = priceItems.filter(p => p.id !== btn.dataset.id);
       await setDoc(doc(db, "settings", "prices"), { items: updated });
+    });
+  });
+
+  tbody.querySelectorAll(".price-img-input").forEach(input => {
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const label = input.parentElement;
+      const origText = label.childNodes[0].textContent.trim();
+      label.childNodes[0].textContent = " Uploading…";
+      const url = await uploadToImgbb(file);
+      label.childNodes[0].textContent = " " + origText;
+      if (!url) return;
+      const updated = priceItems.map(p =>
+        p.id === input.dataset.itemId ? { ...p, exampleImageUrl: url } : p
+      );
+      await setDoc(doc(db, "settings", "prices"), { items: updated });
+      e.target.value = "";
     });
   });
 }
