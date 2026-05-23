@@ -11,6 +11,11 @@
   <header>
     <span class="site-title">Iso's Art Commissions — Admin</span>
     <div class="header-right">
+      <div class="theme-toggle">
+        <button class="theme-btn active" data-theme-val="light">Light</button>
+        <button class="theme-btn" data-theme-val="middle">Mid</button>
+        <button class="theme-btn" data-theme-val="dark">Dark</button>
+      </div>
       <span id="admin-email"></span>
       <button id="btn-signout">Sign Out</button>
     </div>
@@ -18,6 +23,9 @@
 
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="commissions">All Commissions</button>
+    <button class="tab-btn" data-tab="queue">Queue</button>
+    <button class="tab-btn" data-tab="portfolio">Portfolio</button>
+    <button class="tab-btn" data-tab="prices">Prices</button>
     <button class="tab-btn" data-tab="admins">Manage Admins</button>
   </nav>
 
@@ -32,12 +40,84 @@
       </div>
       <button id="btn-new-commission" class="btn-primary">+ New Commission</button>
     </div>
+    <div style="margin-bottom:14px;">
+      <input type="search" id="commission-search" placeholder="Search by name, email, or keyword…"
+             style="width:100%;max-width:420px;padding:7px 12px;border:1px solid var(--accent);border-radius:6px;font-size:0.9rem;background:var(--surface);color:var(--text);outline:none;" />
+    </div>
     <div id="commission-list"></div>
+  </div>
+
+  <!-- Queue Tab -->
+  <div id="tab-queue" class="tab-content" hidden>
+    <p class="section-heading">Active Commission Queue</p>
+    <div class="queue-stats">
+      <div class="queue-stat-card">
+        <div class="queue-stat-number" id="q-pending">—</div>
+        <div class="queue-stat-label">Pending</div>
+      </div>
+      <div class="queue-stat-card">
+        <div class="queue-stat-number" id="q-inprogress">—</div>
+        <div class="queue-stat-label">In Progress</div>
+      </div>
+      <div class="queue-stat-card">
+        <div class="queue-stat-number" id="q-total">—</div>
+        <div class="queue-stat-label">Total Active</div>
+      </div>
+    </div>
+    <div id="queue-list"></div>
+  </div>
+
+  <!-- Portfolio Tab -->
+  <div id="tab-portfolio" class="tab-content" hidden>
+    <div class="portfolio-add-form">
+      <h3>Add Portfolio Item</h3>
+      <input type="text" id="pf-title" placeholder="Title (required)" />
+      <textarea id="pf-description" placeholder="Description (optional)"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label id="pf-upload-label" class="btn-secondary" style="cursor:pointer;margin:0;">
+          Upload Image
+          <input type="file" id="pf-image-upload" accept=".png,.gif,.jpg,.jpeg,.webp" style="display:none;" />
+        </label>
+        <span style="font-size:0.8rem;color:var(--text-muted);">or</span>
+        <input type="url" id="pf-image-url" placeholder="Paste image URL" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--accent);border-radius:4px;font-size:0.85rem;background:var(--surface);color:var(--text);outline:none;" />
+      </div>
+      <p id="pf-preview-label" class="pf-preview"></p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="btn-pf-submit" class="btn-primary">Add to Portfolio</button>
+        <p id="pf-error" class="error-msg" style="text-align:left;margin:0;"></p>
+      </div>
+    </div>
+    <div id="portfolio-list" class="portfolio-grid"></div>
+  </div>
+
+  <!-- Prices Tab -->
+  <div id="tab-prices" class="tab-content" hidden>
+    <table class="price-table" id="price-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Price</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="price-rows"></tbody>
+    </table>
+    <div class="price-add-form">
+      <h3>Add Price Item</h3>
+      <input type="text" id="pr-name"        placeholder="Type (e.g. Bust, Full Body)" />
+      <input type="text" id="pr-description" placeholder="Description (optional)" />
+      <input type="text" id="pr-price"       placeholder="Price (e.g. $30)" />
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="btn-pr-submit" class="btn-primary">Add</button>
+        <p id="pr-error" class="error-msg" style="text-align:left;margin:0;"></p>
+      </div>
+    </div>
   </div>
 
   <!-- Manage Admins Tab -->
   <div id="tab-admins" class="tab-content" hidden>
-    <h3 style="margin-bottom:12px;color:#9d9ce7;">Current Admins</h3>
+    <h3 style="margin-bottom:12px;color:var(--accent);">Current Admins</h3>
     <div id="admin-list"></div>
     <div class="add-admin-form">
       <input type="email" id="input-admin-email" placeholder="Email address" />
@@ -46,11 +126,12 @@
     <p id="admin-error" class="error-msg"></p>
   </div>
 
-  <!-- Commission Detail Panel (fixed right side) -->
+  <!-- Commission Detail Panel -->
   <div id="detail-panel" class="detail-panel" hidden>
     <button id="btn-close-detail">← Back to list</button>
     <h2 id="detail-title"></h2>
     <p id="detail-client"></p>
+    <p id="detail-display-name" style="font-size:0.8rem;color:var(--accent);"></p>
     <p id="detail-description"></p>
 
     <div>
@@ -67,12 +148,17 @@
       <div class="art-gallery" id="art-gallery"></div>
       <label id="art-upload-label" class="btn-secondary" style="display:inline-block;cursor:pointer;margin-bottom:6px;">
         Upload image(s)
-        <input type="file" id="input-art-upload" accept="image/*" multiple style="display:none;" />
+        <input type="file" id="input-art-upload" accept=".png,.gif,.jpg,.jpeg,.webp" multiple style="display:none;" />
       </label>
       <div class="paste-url-row">
         <input type="url" id="input-art-url" placeholder="Or paste an image URL" />
         <button id="btn-add-url" class="btn-primary" style="padding:5px 12px;">Add</button>
       </div>
+      <div class="paste-url-row" style="margin-top:6px;">
+        <input type="url" id="input-psd-url" placeholder="PSD / source file link (Drive, Dropbox…)" />
+        <button id="btn-add-psd" class="btn-secondary" style="padding:5px 10px;">Attach</button>
+      </div>
+      <div id="file-links" class="file-links"></div>
     </div>
 
     <div class="messages-section">

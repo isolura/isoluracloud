@@ -9,3 +9,13 @@ export const firebaseConfig = {
 
 // Get a free API key at https://api.imgbb.com
 export const imgbbApiKey = "6ba075b43ddc9e0d461a96a795f113b8";
+
+// EmailJS — sign up at emailjs.com to enable email notifications to Iso
+// Service ID, Template ID, and Public Key from your EmailJS dashboard
+// Template variables used: {{from_name}}, {{message}}, {{commission_title}}
+export const emailjsConfig = {
+  serviceId:  "PASTE-YOUR-SERVICE-ID",
+  templateId: "PASTE-YOUR-TEMPLATE-ID",
+  publicKey:  "PASTE-YOUR-PUBLIC-KEY",
+  adminEmail: "PASTE-ISO-EMAIL-HERE"
+};

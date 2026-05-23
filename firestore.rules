@@ -11,28 +11,22 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // User records — written on every login
     match /users/{uid} {
       allow read:  if isSignedIn() && (request.auth.uid == uid || isAdmin());
       allow write: if isSignedIn() && request.auth.uid == uid;
     }
 
-    // Admins collection
     match /admins/{uid} {
-      // Any signed-in user can read their own doc (needed for post-login admin check)
       allow get:         if isSignedIn() && request.auth.uid == uid;
-      // Only existing admins can list all admins or write
       allow list, write: if isAdmin();
     }
 
-    // Commissions
     match /commissions/{commissionId} {
       allow read:           if isAdmin() ||
                                (isSignedIn() && resource.data.clientUID == request.auth.uid);
       allow create:         if isSignedIn();
       allow update, delete: if isAdmin();
 
-      // Messages subcollection
       match /messages/{messageId} {
         allow read, create: if isAdmin() ||
           (isSignedIn() &&
@@ -40,6 +34,16 @@ service cloud.firestore {
               .data.clientUID == request.auth.uid);
         allow update, delete: if isAdmin();
       }
+    }
+
+    match /settings/{doc} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /portfolio/{item} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

@@ -1,10 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  getFirestore, collection, doc, addDoc, setDoc,
-  onSnapshot, query, where, orderBy, serverTimestamp
+  getFirestore, collection, doc, addDoc, setDoc, getDoc, onSnapshot,
+  query, where, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { firebaseConfig, emailjsConfig } from "./firebase-config.js";
 
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -18,7 +18,6 @@ let messageUnsubs = {};
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "index.html"; return; }
   currentUser = user;
-  // Keep user record fresh in case client arrives via direct link
   await setDoc(doc(db, "users", user.uid), { email: user.email }, { merge: true });
   document.getElementById("client-email").textContent = user.email;
   initPage();
@@ -27,19 +26,111 @@ onAuthStateChanged(auth, async (user) => {
 // ── Page initialization ─────────────────────────────────────────────────────
 
 function initPage() {
+  initTheme();
   document.getElementById("btn-signout").addEventListener("click", () => signOut(auth));
-  initRequestForm();
-  subscribeCommissions();
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+  });
+
+  document.querySelectorAll(".tab-nav-btn").forEach(btn => {
+    btn.addEventListener("click", () => switchTab(btn.dataset.target));
+  });
+
+  initWelcome();
+  initCommissions();
+  initQueue();
+  initPortfolio();
+  initPrices();
 }
 
-// ── Commission list ─────────────────────────────────────────────────────────
+function switchTab(tabName) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(t => { t.hidden = true; });
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+  if (btn) btn.classList.add("active");
+  const content = document.getElementById("tab-" + tabName);
+  if (content) content.hidden = false;
+}
 
-function subscribeCommissions() {
-  const q = query(
-    collection(db, "commissions"),
-    where("clientUID", "==", currentUser.uid)
-  );
+// ── Theme ───────────────────────────────────────────────────────────────────
 
+function initTheme() {
+  const saved = localStorage.getItem("iso-theme") || "light";
+  applyTheme(saved);
+  document.querySelectorAll(".theme-btn").forEach(btn => {
+    btn.addEventListener("click", () => applyTheme(btn.dataset.themeVal));
+  });
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme === "light" ? "" : theme);
+  localStorage.setItem("iso-theme", theme);
+  document.querySelectorAll(".theme-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.themeVal === theme);
+  });
+}
+
+// ── Welcome tab ─────────────────────────────────────────────────────────────
+
+async function initWelcome() {
+  const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+  const displayName = userSnap.exists() ? (userSnap.data().displayName || "") : "";
+
+  const greeting = document.getElementById("welcome-greeting");
+  const input    = document.getElementById("input-display-name");
+  const status   = document.getElementById("name-status");
+
+  greeting.textContent = displayName ? `Welcome, ${displayName}!` : "Welcome!";
+  input.value = displayName;
+
+  document.getElementById("btn-save-name").addEventListener("click", async () => {
+    const name = input.value.trim();
+    if (!name) return;
+    await setDoc(doc(db, "users", currentUser.uid), { displayName: name }, { merge: true });
+    greeting.textContent = `Welcome, ${name}!`;
+    status.textContent = "Saved!";
+    setTimeout(() => { status.textContent = ""; }, 2000);
+  });
+}
+
+// ── My Commissions tab ──────────────────────────────────────────────────────
+
+function initCommissions() {
+  document.getElementById("btn-request").addEventListener("click", () => {
+    document.getElementById("request-form").hidden = false;
+  });
+
+  document.getElementById("btn-rf-cancel").addEventListener("click", () => {
+    document.getElementById("request-form").hidden = true;
+    document.getElementById("rf-error").textContent = "";
+  });
+
+  document.getElementById("btn-rf-submit").addEventListener("click", async () => {
+    const title       = document.getElementById("rf-title").value.trim();
+    const description = document.getElementById("rf-description").value.trim();
+    const errorEl     = document.getElementById("rf-error");
+    errorEl.textContent = "";
+    if (!title) { errorEl.textContent = "Please enter a title for your commission."; return; }
+
+    const userSnap    = await getDoc(doc(db, "users", currentUser.uid));
+    const displayName = userSnap.exists() ? (userSnap.data().displayName || "") : "";
+
+    await addDoc(collection(db, "commissions"), {
+      clientUID: currentUser.uid, clientEmail: currentUser.email,
+      displayName, title, description,
+      status: "pending", artUrls: [], fileUrls: [],
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    });
+
+    notifyAdmin("New commission request", `${displayName || currentUser.email} submitted: "${title}"\n\n${description}`);
+
+    document.getElementById("request-form").hidden = true;
+    document.getElementById("rf-title").value       = "";
+    document.getElementById("rf-description").value = "";
+  });
+
+  const q = query(collection(db, "commissions"), where("clientUID", "==", currentUser.uid));
   onSnapshot(q, (snap) => {
     const commissions = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
@@ -50,8 +141,6 @@ function subscribeCommissions() {
 
 function renderCommissions(commissions) {
   const list = document.getElementById("commission-list");
-
-  // Tear down old message listeners before re-render
   Object.values(messageUnsubs).forEach(unsub => unsub());
   messageUnsubs = {};
 
@@ -70,12 +159,19 @@ function renderCommissions(commissions) {
         <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
       </div>
       ${c.artUrls && c.artUrls.length ? `
-        <div class="art-gallery" style="padding:10px 16px;background:#fafafa;border-bottom:1px solid #f0effc;">
+        <div class="art-gallery" style="padding:10px 16px;background:var(--surface-2);border-bottom:1px solid var(--border-light);">
           ${c.artUrls.map(url => `
             <a href="${esc(url)}" target="_blank" rel="noopener">
               <img src="${esc(url)}" alt="Commission art" class="art-thumb"
                    onerror="this.parentElement.style.display='none'" />
             </a>`).join("")}
+        </div>` : ""}
+      ${c.fileUrls && c.fileUrls.length ? `
+        <div class="file-links" style="padding:8px 16px;border-bottom:1px solid var(--border-light);">
+          ${c.fileUrls.map(url => {
+            const name = url.split("/").pop().split("?")[0] || "File";
+            return `<a href="${esc(url)}" target="_blank" rel="noopener" class="file-link-btn">📎 ${esc(name)}</a>`;
+          }).join("")}
         </div>` : ""}
       <div class="messages-section" style="padding:12px 16px;">
         <div class="message-thread" id="thread-${c.id}"></div>
@@ -87,22 +183,15 @@ function renderCommissions(commissions) {
     </div>
   `).join("");
 
-  // Attach send handlers
   list.querySelectorAll(".btn-send").forEach(btn => {
     btn.addEventListener("click", () => sendMessage(btn.dataset.id));
   });
   list.querySelectorAll(".input-message").forEach(input => {
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendMessage(input.dataset.id);
-    });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(input.dataset.id); });
   });
 
-  // Subscribe to messages for each commission
   commissions.forEach(c => {
-    const q = query(
-      collection(db, "commissions", c.id, "messages"),
-      orderBy("createdAt", "asc")
-    );
+    const q = query(collection(db, "commissions", c.id, "messages"), orderBy("createdAt", "asc"));
     messageUnsubs[c.id] = onSnapshot(q, (snap) => {
       const thread = document.getElementById("thread-" + c.id);
       if (!thread) return;
@@ -125,59 +214,86 @@ async function sendMessage(commissionId) {
   if (!text) return;
   input.value = "";
   await addDoc(collection(db, "commissions", commissionId, "messages"), {
-    authorUID:   currentUser.uid,
-    authorEmail: currentUser.email,
-    isAdmin:     false,
-    text,
-    createdAt:   serverTimestamp()
+    authorUID: currentUser.uid, authorEmail: currentUser.email,
+    isAdmin: false, text, createdAt: serverTimestamp()
   });
-  await setDoc(
-    doc(db, "commissions", commissionId),
-    { updatedAt: serverTimestamp() },
-    { merge: true }
-  );
+  await setDoc(doc(db, "commissions", commissionId), { updatedAt: serverTimestamp() }, { merge: true });
+  notifyAdmin("New message from client", `${currentUser.email} sent a message:\n\n"${text}"`);
 }
 
-// ── Request Commission Form ─────────────────────────────────────────────────
+// ── Queue tab ───────────────────────────────────────────────────────────────
 
-function initRequestForm() {
-  const form    = document.getElementById("request-form");
-  const errorEl = document.getElementById("rf-error");
-
-  document.getElementById("btn-request").addEventListener("click", () => {
-    form.hidden = false;
+function initQueue() {
+  onSnapshot(doc(db, "settings", "queueInfo"), (snap) => {
+    if (!snap.exists()) return;
+    const { totalPending = 0, totalInProgress = 0 } = snap.data();
+    document.getElementById("cq-pending").textContent    = totalPending;
+    document.getElementById("cq-inprogress").textContent = totalInProgress;
+    document.getElementById("cq-total").textContent      = totalPending + totalInProgress;
   });
+}
 
-  document.getElementById("btn-rf-cancel").addEventListener("click", () => {
-    form.hidden = true;
-    errorEl.textContent = "";
-  });
+// ── Portfolio tab ───────────────────────────────────────────────────────────
 
-  document.getElementById("btn-rf-submit").addEventListener("click", async () => {
-    const title       = document.getElementById("rf-title").value.trim();
-    const description = document.getElementById("rf-description").value.trim();
-    errorEl.textContent = "";
+function initPortfolio() {
+  onSnapshot(collection(db, "portfolio"), (snap) => {
+    const items = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
 
-    if (!title) {
-      errorEl.textContent = "Please enter a title for your commission.";
+    const list = document.getElementById("portfolio-list");
+    if (items.length === 0) {
+      list.innerHTML = '<p class="empty-state">No portfolio items yet.</p>';
       return;
     }
-
-    await addDoc(collection(db, "commissions"), {
-      clientUID:   currentUser.uid,
-      clientEmail: currentUser.email,
-      title,
-      description,
-      status:    "pending",
-      artUrls:   [],
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-
-    form.hidden = true;
-    document.getElementById("rf-title").value       = "";
-    document.getElementById("rf-description").value = "";
+    list.innerHTML = items.map(item => `
+      <div class="portfolio-card">
+        <img src="${esc(item.imageUrl)}" alt="${esc(item.title)}" loading="lazy"
+             onerror="this.style.display='none'" />
+        <div class="portfolio-card-body">
+          <div class="portfolio-card-title">${esc(item.title)}</div>
+          ${item.description ? `<div class="portfolio-card-desc">${esc(item.description)}</div>` : ""}
+        </div>
+      </div>
+    `).join("");
   });
+}
+
+// ── Prices tab ──────────────────────────────────────────────────────────────
+
+function initPrices() {
+  onSnapshot(doc(db, "settings", "prices"), (snap) => {
+    const items = snap.exists() ? (snap.data().items || []) : [];
+    const tbody = document.getElementById("price-rows");
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No prices listed yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td>${esc(item.name)}</td>
+        <td class="price-desc">${esc(item.description)}</td>
+        <td class="price-amount">${esc(item.price)}</td>
+      </tr>
+    `).join("");
+  });
+}
+
+// ── Email notifications ─────────────────────────────────────────────────────
+
+function notifyAdmin(subject, message) {
+  const { serviceId, templateId, publicKey, adminEmail } = emailjsConfig;
+  if ([serviceId, templateId, publicKey, adminEmail].some(v => v.startsWith("PASTE-"))) return;
+  fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      service_id:  serviceId,
+      template_id: templateId,
+      user_id:     publicKey,
+      template_params: { to_email: adminEmail, subject, message, from_email: currentUser.email }
+    })
+  }).catch(() => {});
 }
 
 // ── Utilities ───────────────────────────────────────────────────────────────

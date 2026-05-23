@@ -5,13 +5,14 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   doc, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 export function setupAuth(app, db) {
-  const auth = getAuth(app);
+  const auth     = getAuth(app);
   const provider = new GoogleAuthProvider();
 
   const authPanel     = document.getElementById("auth-panel");
@@ -22,6 +23,8 @@ export function setupAuth(app, db) {
   const btnGoogle     = document.getElementById("btn-google");
   const btnShowSignin = document.getElementById("btn-show-signin");
   const btnShowSignup = document.getElementById("btn-show-signup");
+  const btnForgot     = document.getElementById("btn-forgot");
+  const forgotWrap    = document.getElementById("forgot-wrap");
   const authError     = document.getElementById("auth-error");
 
   let mode = "signin";
@@ -31,6 +34,7 @@ export function setupAuth(app, db) {
     btnSubmit.textContent = "Sign In";
     btnShowSignin.classList.add("active");
     btnShowSignup.classList.remove("active");
+    forgotWrap.hidden = false;
     authError.textContent = "";
   });
 
@@ -39,13 +43,29 @@ export function setupAuth(app, db) {
     btnSubmit.textContent = "Sign Up";
     btnShowSignup.classList.add("active");
     btnShowSignin.classList.remove("active");
+    forgotWrap.hidden = true;
     authError.textContent = "";
+  });
+
+  btnForgot.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const email = inputEmail.value.trim();
+    if (!email) { authError.textContent = "Enter your email above first."; return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      authError.style.color = "var(--accent)";
+      authError.textContent = "Password reset email sent — check your inbox.";
+    } catch (err) {
+      authError.style.color = "";
+      authError.textContent = friendlyError(err.code);
+    }
   });
 
   authForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     authError.textContent = "";
-    const email = inputEmail.value.trim();
+    authError.style.color = "";
+    const email    = inputEmail.value.trim();
     const password = inputPassword.value;
     btnSubmit.disabled = true;
     try {
@@ -86,11 +106,7 @@ export function setupAuth(app, db) {
     }
 
     authPanel.hidden = true;
-
-    // Write user record so admins can look up UID by email
     await setDoc(doc(db, "users", user.uid), { email: user.email }, { merge: true });
-
-    // Route based on admin status
     const adminSnap = await getDoc(doc(db, "admins", user.uid));
     window.location.href = adminSnap.exists() ? "admin.html" : "client.html";
   });

@@ -8,33 +8,31 @@
 </head>
 <body>
 
-  <!-- AUTH PANEL: shown when logged out -->
   <div id="auth-panel">
     <h1>Iso's Art Commissions</h1>
 
-    <!-- Toggle between sign-in and sign-up -->
     <div id="auth-toggle">
       <button id="btn-show-signin" class="toggle-btn active">Sign In</button>
       <button id="btn-show-signup" class="toggle-btn">Sign Up</button>
     </div>
 
-    <!-- Email/password form -->
     <form id="auth-form">
       <input type="email" id="input-email" placeholder="Email" required />
       <input type="password" id="input-password" placeholder="Password" required />
       <button type="submit" id="btn-submit">Sign In</button>
     </form>
 
+    <p id="forgot-wrap" style="text-align:center;font-size:0.82rem;">
+      <a href="#" id="btn-forgot" style="color:var(--accent);text-decoration:none;">Forgot password?</a>
+    </p>
+
     <div class="divider">or</div>
 
-    <!-- Google sign-in -->
     <button id="btn-google">Sign in with Google</button>
 
-    <!-- Error message display -->
     <p id="auth-error" class="error-msg"></p>
   </div>
 
-  <!-- Firebase SDK (CDN) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -42,7 +40,7 @@
     import { setupAuth } from "./js/auth.js";
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db  = getFirestore(app);
     setupAuth(app, db);
   </script>
 

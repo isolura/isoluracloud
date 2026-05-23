@@ -11,24 +11,58 @@
   <header>
     <span class="site-title">Iso's Art Commissions</span>
     <div class="header-right">
+      <div class="theme-toggle">
+        <button class="theme-btn active" data-theme-val="light">Light</button>
+        <button class="theme-btn" data-theme-val="middle">Mid</button>
+        <button class="theme-btn" data-theme-val="dark">Dark</button>
+      </div>
       <span id="client-email"></span>
       <button id="btn-signout">Sign Out</button>
     </div>
   </header>
 
-  <div style="padding:20px 24px;max-width:760px;">
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="welcome">Welcome</button>
+    <button class="tab-btn" data-tab="commissions">My Commissions</button>
+    <button class="tab-btn" data-tab="queue">Queue</button>
+    <button class="tab-btn" data-tab="portfolio">Portfolio</button>
+    <button class="tab-btn" data-tab="prices">Prices</button>
+  </nav>
+
+  <!-- Welcome Tab -->
+  <div id="tab-welcome" class="tab-content">
+    <div class="welcome-section">
+      <h2 id="welcome-greeting">Welcome!</h2>
+      <p>Thanks for visiting Iso's Art Commissions. Browse the portfolio, check out prices, or submit a commission request.</p>
+
+      <div class="display-name-card">
+        <h3>Your Display Name</h3>
+        <div class="paste-url-row" style="margin-top:0;">
+          <input type="text" id="input-display-name" placeholder="Name or alias shown to Iso" />
+          <button id="btn-save-name" class="btn-primary">Save</button>
+        </div>
+        <p class="name-status" id="name-status"></p>
+      </div>
+
+      <div class="welcome-links">
+        <button class="tab-nav-btn btn-secondary" data-target="portfolio">Browse Portfolio</button>
+        <button class="tab-nav-btn btn-secondary" data-target="prices">View Prices</button>
+        <button class="tab-nav-btn btn-primary" data-target="commissions">My Commissions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Commissions Tab -->
+  <div id="tab-commissions" class="tab-content" hidden>
     <div class="client-toolbar">
       <h2>My Commissions</h2>
       <button id="btn-request" class="btn-primary">+ Request Commission</button>
     </div>
 
-    <!-- Request Commission Form -->
     <div id="request-form" hidden>
       <h3>New Commission Request</h3>
-      <input type="text" id="rf-title"
-             placeholder="What would you like? (required)" />
-      <textarea id="rf-description"
-                placeholder="Tell Iso more — character description, style, references, etc."></textarea>
+      <input type="text" id="rf-title" placeholder="What would you like? (required)" />
+      <textarea id="rf-description" placeholder="Tell Iso more — character description, style, references, etc."></textarea>
       <div class="form-actions">
         <button id="btn-rf-cancel" class="btn-secondary">Cancel</button>
         <button id="btn-rf-submit" class="btn-primary">Submit Request</button>
@@ -37,6 +71,53 @@
     </div>
 
     <div id="commission-list"></div>
+  </div>
+
+  <!-- Queue Tab -->
+  <div id="tab-queue" class="tab-content" hidden>
+    <p class="section-heading">Commission Queue</p>
+    <div class="queue-stats">
+      <div class="queue-stat-card">
+        <div class="queue-stat-number" id="cq-pending">—</div>
+        <div class="queue-stat-label">Pending</div>
+      </div>
+      <div class="queue-stat-card">
+        <div class="queue-stat-number" id="cq-inprogress">—</div>
+        <div class="queue-stat-label">In Progress</div>
+      </div>
+      <div class="queue-stat-card">
+        <div class="queue-stat-number" id="cq-total">—</div>
+        <div class="queue-stat-label">Total Active</div>
+      </div>
+    </div>
+    <p style="color:var(--text-muted);font-size:0.88rem;text-align:center;">
+      This shows how many commissions Iso is currently working through.
+    </p>
+  </div>
+
+  <!-- Portfolio Tab -->
+  <div id="tab-portfolio" class="tab-content" hidden>
+    <p class="section-heading">Portfolio</p>
+    <div id="portfolio-list" class="portfolio-grid">
+      <p class="empty-state">Loading…</p>
+    </div>
+  </div>
+
+  <!-- Prices Tab -->
+  <div id="tab-prices" class="tab-content" hidden>
+    <p class="section-heading">Price List</p>
+    <table class="price-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody id="price-rows">
+        <tr><td colspan="3" class="empty-state">Loading…</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <script type="module" src="js/client.js"></script>
