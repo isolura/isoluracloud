@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, deleteDoc, updateDoc,
-  onSnapshot, query, where, orderBy, serverTimestamp, arrayUnion
+  onSnapshot, query, where, orderBy, serverTimestamp, arrayUnion, increment
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseConfig, imgbbApiKey } from "./firebase-config.js";
 
@@ -277,6 +277,18 @@ async function openDetail(id) {
     document.getElementById("detail-display-name").textContent =
       "Display name: " + userSnap.data().displayName;
   }
+
+  const notesSnap = await getDoc(doc(db, "adminNotes", c.clientUID));
+  const notesEl   = document.getElementById("detail-admin-notes");
+  notesEl.value   = notesSnap.exists() ? (notesSnap.data().notes || "") : "";
+  document.getElementById("notes-saved-msg").textContent = "";
+
+  notesEl.onblur = async () => {
+    await setDoc(doc(db, "adminNotes", c.clientUID), { notes: notesEl.value });
+    const msg = document.getElementById("notes-saved-msg");
+    msg.textContent = "Saved";
+    setTimeout(() => { msg.textContent = ""; }, 1500);
+  };
 
   if (unsubMessages) unsubMessages();
   unsubMessages = onSnapshot(
