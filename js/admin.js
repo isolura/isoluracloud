@@ -226,6 +226,9 @@ function renderQueue() {
   document.getElementById("q-inprogress").textContent = inProgress;
   document.getElementById("q-total").textContent      = active.length;
 
+  const queueOrder = active.map((c, i) => ({ uid: c.clientUID, position: i + 1, status: c.status }));
+  setDoc(doc(db, "settings", "queueOrder"), { entries: queueOrder });
+
   const list = document.getElementById("queue-list");
   if (active.length === 0) {
     list.innerHTML = '<p class="empty-state">Queue is empty!</p>';
@@ -243,9 +246,6 @@ function renderQueue() {
       <button class="btn-view" data-id="${c.id}">View →</button>
     </div>
   `).join("");
-
-  const queueOrder = active.map((c, i) => ({ uid: c.clientUID, position: i + 1, status: c.status }));
-  setDoc(doc(db, "settings", "queueOrder"), { entries: queueOrder });
 
   list.querySelectorAll(".btn-view").forEach(btn => {
     btn.addEventListener("click", () => {
