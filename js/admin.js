@@ -68,6 +68,15 @@ function initPage() {
     });
   });
 
+  document.getElementById("detail-paid").addEventListener("change", async () => {
+    if (!currentCommissionId) return;
+    const paid = document.getElementById("detail-paid").checked;
+    await updateDoc(doc(db, "commissions", currentCommissionId), { paid, updatedAt: serverTimestamp() });
+    const statusEl = document.getElementById("detail-paid-status");
+    statusEl.textContent = "Saved";
+    setTimeout(() => { statusEl.textContent = ""; }, 1500);
+  });
+
   const artUploadInput = document.getElementById("input-art-upload");
   const artUploadLabel = document.getElementById("art-upload-label");
 
@@ -191,6 +200,7 @@ function renderCommissions() {
         <div class="commission-row-meta">${esc(c.clientEmail)} · ${fmtDate(c.updatedAt)}</div>
       </div>
       <div class="commission-row-right">
+        <span class="${c.paid ? 'paid-badge' : 'unpaid-badge'}">${c.paid ? 'Paid ✓' : 'Unpaid'}</span>
         <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
         <button class="btn-view" data-id="${c.id}">View →</button>
       </div>
@@ -256,6 +266,8 @@ async function openDetail(id) {
   document.getElementById("detail-client").textContent      = "Client: " + c.clientEmail;
   document.getElementById("detail-description").textContent = c.description || "";
   document.getElementById("detail-status").value            = c.status;
+  document.getElementById("detail-paid").checked = c.paid === true;
+  document.getElementById("detail-paid-status").textContent = "";
   document.getElementById("detail-display-name").textContent = "";
   renderArtGallery(c.artUrls || []);
   renderFileLinks(c.fileUrls || []);

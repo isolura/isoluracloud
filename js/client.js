@@ -156,7 +156,10 @@ function renderCommissions(commissions) {
           <div class="card-title">${esc(c.title)}</div>
           <div class="card-meta">Requested ${fmtDate(c.createdAt)} · Updated ${fmtDate(c.updatedAt)}</div>
         </div>
-        <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
+          ${c.paid ? '<span class="paid-badge">Payment received ✓</span>' : ''}
+        </div>
       </div>
       ${c.artUrls && c.artUrls.length ? `
         <div class="art-gallery" style="padding:10px 16px;background:var(--surface-2);border-bottom:1px solid var(--border-light);">
