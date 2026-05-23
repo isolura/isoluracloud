@@ -1157,6 +1157,9 @@ header {
 [data-theme="middle"] .discount-result.valid,
 [data-theme="dark"]   .discount-result.valid { color: #5ecf7a; }
 
+[data-theme="middle"] .discount-result.invalid,
+[data-theme="dark"]   .discount-result.invalid { color: var(--pink); }
+
 .discount-code-row {
   background: var(--surface);
   border: 1px solid var(--border);
