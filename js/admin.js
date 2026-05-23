@@ -244,6 +244,9 @@ function renderQueue() {
     </div>
   `).join("");
 
+  const queueOrder = active.map((c, i) => ({ uid: c.clientUID, position: i + 1, status: c.status }));
+  setDoc(doc(db, "settings", "queueOrder"), { entries: queueOrder });
+
   list.querySelectorAll(".btn-view").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));

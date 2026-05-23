@@ -227,12 +227,45 @@ async function sendMessage(commissionId) {
 // ── Queue tab ───────────────────────────────────────────────────────────────
 
 function initQueue() {
-  onSnapshot(doc(db, "settings", "queueInfo"), (snap) => {
-    if (!snap.exists()) return;
-    const { totalPending = 0, totalInProgress = 0 } = snap.data();
-    document.getElementById("cq-pending").textContent    = totalPending;
-    document.getElementById("cq-inprogress").textContent = totalInProgress;
-    document.getElementById("cq-total").textContent      = totalPending + totalInProgress;
+  onSnapshot(doc(db, "settings", "queueOrder"), (snap) => {
+    const summaryEl = document.getElementById("cq-position-summary");
+    const listEl    = document.getElementById("cq-list");
+
+    if (!snap.exists()) {
+      summaryEl.hidden = true;
+      listEl.innerHTML = '<p class="empty-state">Queue is empty!</p>';
+      return;
+    }
+
+    const entries = snap.data().entries || [];
+
+    if (entries.length === 0) {
+      summaryEl.hidden = true;
+      listEl.innerHTML = '<p class="empty-state">Queue is empty!</p>';
+      return;
+    }
+
+    const myEntries = entries.filter(e => e.uid === currentUser.uid);
+    if (myEntries.length > 0) {
+      const first = myEntries[0];
+      summaryEl.hidden = false;
+      summaryEl.textContent = myEntries.length === 1
+        ? `You are #${first.position} in the queue.`
+        : `You have ${myEntries.length} commissions in the queue (positions ${myEntries.map(e => '#' + e.position).join(', ')}).`;
+    } else {
+      summaryEl.hidden = false;
+      summaryEl.textContent = "You have no active commissions in the queue.";
+    }
+
+    listEl.innerHTML = entries.map(e => {
+      const isMe = e.uid === currentUser.uid;
+      return `
+        <div class="client-queue-row${isMe ? ' is-me' : ''}">
+          <span class="client-queue-number">#${e.position}</span>
+          <span class="status-badge status-${e.status}">${statusLabel(e.status)}</span>
+          ${isMe ? '<span class="you-tag">You</span>' : ''}
+        </div>`;
+    }).join("");
   });
 }
 

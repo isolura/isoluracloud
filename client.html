@@ -76,21 +76,9 @@
   <!-- Queue Tab -->
   <div id="tab-queue" class="tab-content" hidden>
     <p class="section-heading">Commission Queue</p>
-    <div class="queue-stats">
-      <div class="queue-stat-card">
-        <div class="queue-stat-number" id="cq-pending">—</div>
-        <div class="queue-stat-label">Pending</div>
-      </div>
-      <div class="queue-stat-card">
-        <div class="queue-stat-number" id="cq-inprogress">—</div>
-        <div class="queue-stat-label">In Progress</div>
-      </div>
-      <div class="queue-stat-card">
-        <div class="queue-stat-number" id="cq-total">—</div>
-        <div class="queue-stat-label">Total Active</div>
-      </div>
-    </div>
-    <p style="color:var(--text-muted);font-size:0.88rem;text-align:center;">
+    <div id="cq-position-summary" class="queue-position-summary" hidden></div>
+    <div id="cq-list"></div>
+    <p style="color:var(--text-muted);font-size:0.82rem;margin-top:16px;text-align:center;">
       This shows how many commissions Iso is currently working through.
     </p>
   </div>
