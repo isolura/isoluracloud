@@ -8,4 +8,4 @@ export const firebaseConfig = {
 };
 
 // Get a free API key at https://api.imgbb.com
-export const imgbbApiKey = "PASTE-YOUR-IMGBB-API-KEY-HERE";
+export const imgbbApiKey = "6ba075b43ddc9e0d461a96a795f113b8";
