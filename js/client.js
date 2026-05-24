@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, getDoc, onSnapshot,
-  query, where, orderBy, serverTimestamp, increment, writeBatch
+  query, where, orderBy, serverTimestamp, increment, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseConfig, emailjsConfig } from "./firebase-config.js";
 
@@ -129,15 +129,32 @@ function initCommissions() {
       commissionData.discountText = activeDiscount.discountText;
     }
 
-    const batch = writeBatch(db);
     const newRef = doc(collection(db, "commissions"));
-    batch.set(newRef, commissionData);
     if (activeDiscount) {
-      batch.update(doc(db, "discountCodes", activeDiscount.code), { usesLeft: increment(-1) });
+      const codeRef = doc(db, "discountCodes", activeDiscount.code);
+      try {
+        await runTransaction(db, async (transaction) => {
+          const codeSnap = await transaction.get(codeRef);
+          if (!codeSnap.exists() || codeSnap.data().usesLeft <= 0) {
+            throw new Error("expired");
+          }
+          transaction.set(newRef, commissionData);
+          transaction.update(codeRef, { usesLeft: increment(-1) });
+        });
+      } catch {
+        errorEl.textContent = "That discount code is no longer valid.";
+        activeDiscount = null;
+        document.getElementById("discount-result").className = "discount-result invalid";
+        document.getElementById("discount-result").textContent = "Code expired — already used up.";
+        document.getElementById("discount-code-input").value = "";
+        return;
+      }
+    } else {
+      await setDoc(newRef, commissionData);
     }
-    await batch.commit();
 
     activeDiscount = null;
+    document.getElementById("discount-result").className = "discount-result";
     document.getElementById("discount-result").textContent = "";
     document.getElementById("discount-code-input").value   = "";
 
@@ -346,9 +363,9 @@ function initDiscountCode() {
   document.getElementById("btn-apply-discount").addEventListener("click", async () => {
     const raw  = document.getElementById("discount-code-input").value.trim();
     const code = raw.toLowerCase();
+    if (!code) { resultEl.className = "discount-result"; resultEl.textContent = ""; return; }
     resultEl.className = "discount-result";
     resultEl.textContent = "Checking…";
-    if (!code) { resultEl.textContent = ""; return; }
 
     const snap = await getDoc(doc(db, "discountCodes", code));
     if (!snap.exists() || snap.data().usesLeft <= 0) {

@@ -612,8 +612,14 @@ function initDiscountCodes() {
       <div class="discount-code-row">
         <span class="discount-code-name">${esc(c.id)}</span>
         <span class="discount-code-meta">${esc(c.discount)} · ${c.usesLeft} / ${c.totalUses} uses left</span>
+        <button class="btn-remove-admin btn-dc-delete" data-code="${esc(c.id)}" style="margin-left:auto;">Delete</button>
       </div>
     `).join("");
+    list.querySelectorAll(".btn-dc-delete").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        await deleteDoc(doc(db, "discountCodes", btn.dataset.code));
+      });
+    });
   });
 
   const errorEl = document.getElementById("dc-error");
@@ -626,6 +632,11 @@ function initDiscountCodes() {
     if (!discount)        { errorEl.textContent = "Discount text is required."; return; }
     if (!uses || uses < 1){ errorEl.textContent = "Enter a valid number of uses."; return; }
 
+    const existingSnap = await getDoc(doc(db, "discountCodes", code));
+    if (existingSnap.exists()) {
+      errorEl.textContent = "A code with that name already exists.";
+      return;
+    }
     await setDoc(doc(db, "discountCodes", code), {
       discount, usesLeft: uses, totalUses: uses, createdAt: serverTimestamp()
     });
