@@ -672,6 +672,11 @@ function initLoyaltyCardSettings() {
       msgEl.style.color = "var(--pink)";
       return;
     }
+    if (tier1Count >= tier2Count) {
+      msgEl.textContent = "Tier 2 must require more commissions than Tier 1.";
+      msgEl.style.color = "var(--pink)";
+      return;
+    }
 
     await setDoc(doc(db, "settings", "loyaltyCard"), { tier1Count, tier1Reward, tier2Count, tier2Reward });
     msgEl.style.color = "var(--accent)";

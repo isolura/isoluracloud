@@ -106,13 +106,13 @@ function initLoyaltyCard() {
 
   function renderLoyalty() {
     const el = document.getElementById("loyalty-card-widget");
-    if (!loyaltyConfig || (!loyaltyConfig.tier1Count && !loyaltyConfig.tier2Count)) {
+    if (!loyaltyConfig || !loyaltyConfig.tier1Count || !loyaltyConfig.tier2Count) {
       el.innerHTML = "";
       return;
     }
 
     const { tier1Count, tier1Reward, tier2Count, tier2Reward } = loyaltyConfig;
-    const target = doneCount < tier1Count ? tier1Count : doneCount < tier2Count ? tier2Count : tier2Count;
+    const target = doneCount < tier1Count ? tier1Count : tier2Count;
     const progress = Math.min(doneCount, target);
 
     const punches = Array.from({ length: target }, (_, i) => {
