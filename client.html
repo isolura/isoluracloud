@@ -24,6 +24,7 @@
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="welcome">Welcome</button>
     <button class="tab-btn" data-tab="commissions">My Commissions</button>
+    <button class="tab-btn" data-tab="old-commissions">Old Commissions</button>
     <button class="tab-btn" data-tab="queue">Queue</button>
     <button class="tab-btn" data-tab="portfolio">Portfolio</button>
     <button class="tab-btn" data-tab="prices">Prices</button>
@@ -75,6 +76,13 @@
     </div>
 
     <div id="commission-list"></div>
+  </div>
+
+  <!-- Old Commissions Tab -->
+  <div id="tab-old-commissions" class="tab-content" hidden>
+    <p class="section-heading">Old Commissions</p>
+    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">Commissions you've archived. Click "Unarchive" to move them back to your main tab.</p>
+    <div id="old-commission-list"></div>
   </div>
 
   <!-- Queue Tab -->

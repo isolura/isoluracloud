@@ -1317,3 +1317,28 @@ header {
 }
 
 .leaderboard-row.is-me .leaderboard-count { color: var(--accent); }
+
+/* ── Archive ──────────────────────────────────────────────── */
+.btn-archive {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-archive:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-unarchive {
+  background: none;
+  border: 1px dashed var(--accent);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}

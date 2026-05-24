@@ -25,6 +25,9 @@ service cloud.firestore {
       allow read:           if isAdmin() ||
                                (isSignedIn() && resource.data.clientUID == request.auth.uid);
       allow create:         if isSignedIn();
+      allow update:         if isSignedIn()
+                            && resource.data.clientUID == request.auth.uid
+                            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archived']);
       allow update, delete: if isAdmin();
 
       match /messages/{messageId} {

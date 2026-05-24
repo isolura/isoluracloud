@@ -40,6 +40,7 @@ function initPage() {
 
   initWelcome();
   initCommissions();
+  initOldCommissions();
   initQueue();
   initPortfolio();
   initPrices();
@@ -251,10 +252,11 @@ function initCommissions() {
 
   const q = query(collection(db, "commissions"), where("clientUID", "==", currentUser.uid));
   onSnapshot(q, (snap) => {
-    const commissions = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const active = all
+      .filter(c => !c.archived)
       .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0));
-    renderCommissions(commissions);
+    renderCommissions(active);
   });
 }
 
@@ -279,6 +281,7 @@ function renderCommissions(commissions) {
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
           ${c.paid ? '<span class="paid-badge">Payment received ✓</span>' : ''}
+          <button class="btn-archive" data-id="${c.id}">Archive</button>
         </div>
       </div>
       ${c.artUrls && c.artUrls.length ? `
@@ -312,6 +315,9 @@ function renderCommissions(commissions) {
   list.querySelectorAll(".input-message").forEach(input => {
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(input.dataset.id); });
   });
+  list.querySelectorAll(".btn-archive").forEach(btn => {
+    btn.addEventListener("click", () => archiveCommission(btn.dataset.id));
+  });
 
   commissions.forEach(c => {
     const q = query(collection(db, "commissions", c.id, "messages"), orderBy("createdAt", "asc"));
@@ -329,6 +335,51 @@ function renderCommissions(commissions) {
       thread.scrollTop = thread.scrollHeight;
     });
   });
+}
+
+function initOldCommissions() {
+  const q = query(collection(db, "commissions"), where("clientUID", "==", currentUser.uid));
+  onSnapshot(q, (snap) => {
+    const archived = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(c => c.archived)
+      .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0));
+
+    const list = document.getElementById("old-commission-list");
+    if (archived.length === 0) {
+      list.innerHTML = '<p class="empty-state">No archived commissions.</p>';
+      return;
+    }
+
+    list.innerHTML = archived.map(c => `
+      <div class="commission-card" data-id="${c.id}">
+        <div class="card-header">
+          <div>
+            <div class="card-title">${esc(c.title)}</div>
+            <div class="card-meta">Requested ${fmtDate(c.createdAt)} · Updated ${fmtDate(c.updatedAt)}</div>
+            ${c.discountText ? `<div class="card-meta" style="color:var(--accent);">Discount applied: ${esc(c.discountText)}</div>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="status-badge status-${c.status}">${statusLabel(c.status)}</span>
+            ${c.paid ? '<span class="paid-badge">Payment received ✓</span>' : ''}
+            <button class="btn-unarchive" data-id="${c.id}">Unarchive</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    list.querySelectorAll(".btn-unarchive").forEach(btn => {
+      btn.addEventListener("click", () => unarchiveCommission(btn.dataset.id));
+    });
+  });
+}
+
+async function archiveCommission(id) {
+  await setDoc(doc(db, "commissions", id), { archived: true }, { merge: true });
+}
+
+async function unarchiveCommission(id) {
+  await setDoc(doc(db, "commissions", id), { archived: false }, { merge: true });
 }
 
 async function sendMessage(commissionId) {
