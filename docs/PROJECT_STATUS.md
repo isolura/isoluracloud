@@ -3,7 +3,7 @@
 **Repo:** https://github.com/isolura/isoluracloud  
 **Live site:** https://isolura.github.io/isoluracloud/  
 **Firebase project:** isoluracloud  
-**Last updated:** 2026-05-23
+**Last updated:** 2026-05-23 (May 2026 feature batch)
 
 ---
 
@@ -53,19 +53,20 @@ storage.rules           ← Firebase Storage rules (not in use — uses ImgBB in
 - Post-login routing: admins → admin.html, everyone else → client.html
 
 ### Client Dashboard (client.html / client.js)
-- **Welcome tab** — set/update display name (alias shown to Iso); greeting updates with name
-- **My Commissions tab** — submit commission requests (title + description); view status, delivered art (images + PSD download links), message thread with Iso
-- **Queue tab** — shows live count of Iso's pending and in-progress commissions
+- **Welcome tab** — set/update display name; commission loyalty punch card (configurable tiers + rewards, shown when Iso configures it); top commissioners leaderboard
+- **My Commissions tab** — submit commission requests (title + description, optional discount code); view status, delivered art (images + file download links), message thread with Iso; payment received badge (read-only); archive button to move commission out of main view
+- **Old Commissions tab** — archived commissions with unarchive button; keeps dashboard tidy
+- **Queue tab** — anonymous numbered list showing your position; own entries highlighted with "You" tag and position summary
 - **Portfolio tab** — browse Iso's portfolio gallery
-- **Prices tab** — view Iso's price list
+- **Prices tab** — view Iso's price list with example image thumbnails; discount code input (applied at commission submit, decrements available uses)
 - **Light/Mid/Dark theme toggle** — saved to localStorage
 
 ### Admin Dashboard (admin.html / admin.js)
-- **All Commissions tab** — filterable by status (All/Pending/In Progress/Done); searchable by title, email, display name, or description keyword; commission detail panel shows client info, display name, status dropdown, art gallery, PSD/file links, message thread
-- **Queue tab** — numbered live list of all active (pending + in_progress) commissions sorted by creation date; stat cards for counts
-- **Portfolio tab** — add portfolio items (title, description, image via ImgBB upload or paste URL); delete items
-- **Prices tab** — add/remove price list items (type, description, price); table view
-- **Manage Admins tab** — add admin by email, remove admins
+- **All Commissions tab** — filterable by status; searchable; commission detail panel shows client info, status dropdown, payment received checkbox, admin-only notes textarea (private, per-client), art gallery, file links, message thread; paid/unpaid badge on commission rows
+- **Queue tab** — numbered live list of active commissions; writes `settings/queueOrder` on every change so client queue tab stays live
+- **Portfolio tab** — add/delete portfolio items via ImgBB upload or URL paste
+- **Prices tab** — add/remove price items; per-item example image upload; discount code generator (code name, discount text, number of uses) with live list showing remaining uses and delete button
+- **Manage Admins tab** — add/remove admins; loyalty card tier/reward configuration (tier 1 and tier 2 thresholds and reward text)
 - **Light/Mid/Dark theme toggle** — saved to localStorage
 
 ### Image / File Delivery
@@ -103,6 +104,10 @@ storage.rules           ← Firebase Storage rules (not in use — uses ImgBB in
 | `status` | string | `pending` / `in_progress` / `done` |
 | `artUrls` | string[] | Image URLs (from ImgBB) |
 | `fileUrls` | string[] | PSD/source file URLs |
+| `paid` | boolean | Default false; admin toggles |
+| `archived` | boolean | Default false/absent; client toggles |
+| `discountCode` | string | Optional; set at submit time |
+| `discountText` | string | Optional; human-readable discount description |
 | `createdAt` | timestamp | |
 | `updatedAt` | timestamp | |
 
@@ -126,7 +131,7 @@ storage.rules           ← Firebase Storage rules (not in use — uses ImgBB in
 ### `settings/prices`
 | Field | Type | Notes |
 |-------|------|-------|
-| `items` | array | `[{id, name, description, price}]` |
+| `items` | array | `[{id, name, description, price, exampleImageUrl?}]` |
 
 ### `settings/queueInfo`
 | Field | Type | Notes |
@@ -134,17 +139,49 @@ storage.rules           ← Firebase Storage rules (not in use — uses ImgBB in
 | `totalPending` | number | Updated by admin.js on every commission change |
 | `totalInProgress` | number | |
 
+### `settings/queueOrder`
+| Field | Type | Notes |
+|-------|------|-------|
+| `entries` | array | `[{uid, position, status}]` active commissions in order |
+
+### `settings/loyaltyCard`
+| Field | Type | Notes |
+|-------|------|-------|
+| `tier1Count` | number | Commissions needed for tier 1 reward |
+| `tier1Reward` | string | |
+| `tier2Count` | number | Commissions needed for tier 2 reward |
+| `tier2Reward` | string | |
+
+### `settings/leaderboard`
+| Field | Type | Notes |
+|-------|------|-------|
+| `entries` | array | `[{uid, displayName, doneCount}]` top 10 by done count |
+| `updatedAt` | timestamp | |
+
+### `adminNotes/{uid}`
+| Field | Type | Notes |
+|-------|------|-------|
+| `notes` | string | Admin-only; never exposed to clients |
+
+### `discountCodes/{code}`
+| Field | Type | Notes |
+|-------|------|-------|
+| `discount` | string | Human-readable description, e.g. "10% off" |
+| `usesLeft` | number | Decremented atomically (transaction) at commission submit |
+| `totalUses` | number | Original total for display |
+| `createdAt` | timestamp | |
+
 ---
 
 ## Things That Still Need Configuring
 
 ### 1. Firestore Rules — REQUIRED
-The updated rules file hasn't been published yet. Iso needs to:
+The rules file must be manually published to Firebase after each update. Iso needs to:
 1. Open `firestore.rules` in the repo
 2. Copy the contents
 3. Firebase Console → Firestore Database → Rules → paste → **Publish**
 
-(Adds read/write access for `/settings` and `/portfolio` collections)
+Current rules cover: `users`, `admins`, `commissions`, `commissions/messages`, `portfolio`, `settings/*`, `adminNotes`, `discountCodes`.
 
 ### 2. Making Iso an Admin — REQUIRED
 Iso needs to be in the `admins` Firestore collection to access admin.html:
