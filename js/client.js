@@ -96,6 +96,7 @@ async function initWelcome() {
   });
 
   initLoyaltyCard();
+  initLeaderboard();
 }
 
 // ── Loyalty Card ────────────────────────────────────────────────────────────
@@ -148,6 +149,34 @@ function initLoyaltyCard() {
   onSnapshot(q, (snap) => {
     doneCount = snap.docs.filter(d => d.data().status === "done").length;
     renderLoyalty();
+  });
+}
+
+// ── Leaderboard ─────────────────────────────────────────────────────────────
+
+function initLeaderboard() {
+  onSnapshot(doc(db, "settings", "leaderboard"), (snap) => {
+    const el = document.getElementById("leaderboard-widget");
+    if (!snap.exists()) { el.innerHTML = ""; return; }
+
+    const entries = snap.data().entries || [];
+    if (entries.length === 0) { el.innerHTML = ""; return; }
+
+    const rows = entries.map((e, i) => {
+      const isMe = e.uid === currentUser.uid;
+      return `
+        <div class="leaderboard-row${isMe ? ' is-me' : ''}">
+          <span class="leaderboard-rank">#${i + 1}</span>
+          <span>${esc(e.displayName)}</span>
+          <span class="leaderboard-count">${e.doneCount} commission${e.doneCount !== 1 ? 's' : ''}</span>
+        </div>`;
+    }).join("");
+
+    el.innerHTML = `
+      <div class="leaderboard-card">
+        <h3>Top Commissioners</h3>
+        ${rows}
+      </div>`;
   });
 }
 

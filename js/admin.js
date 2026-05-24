@@ -168,6 +168,24 @@ function subscribeCommissions() {
       totalPending: pending, totalInProgress: inProgress
     });
 
+    const doneCounts = {};
+    const displayNames = {};
+    allCommissions
+      .filter(c => c.status === "done")
+      .forEach(c => {
+        doneCounts[c.clientUID]   = (doneCounts[c.clientUID] || 0) + 1;
+        if (c.displayName) displayNames[c.clientUID] = c.displayName;
+      });
+
+    const leaderboard = Object.entries(doneCounts)
+      .map(([uid, count]) => ({ uid, displayName: displayNames[uid] || "Anonymous", doneCount: count }))
+      .sort((a, b) => b.doneCount - a.doneCount)
+      .slice(0, 10);
+
+    await setDoc(doc(db, "settings", "leaderboard"), {
+      entries: leaderboard, updatedAt: serverTimestamp()
+    });
+
     if (currentCommissionId) {
       const c = allCommissions.find(c => c.id === currentCommissionId);
       if (c) { renderArtGallery(c.artUrls || []); renderFileLinks(c.fileUrls || []); }
