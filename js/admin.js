@@ -132,6 +132,7 @@ function initPage() {
   initPrices();
   initDiscountCodes();
   subscribeCommissions();
+  initLoyaltyCardSettings();
 }
 
 // ── Theme ───────────────────────────────────────────────────────────────────
@@ -644,6 +645,38 @@ function initDiscountCodes() {
     document.getElementById("dc-code").value     = "";
     document.getElementById("dc-discount").value = "";
     document.getElementById("dc-uses").value     = "";
+  });
+}
+
+// ── Loyalty Card Settings ───────────────────────────────────────────────────
+
+function initLoyaltyCardSettings() {
+  getDoc(doc(db, "settings", "loyaltyCard")).then(snap => {
+    if (!snap.exists()) return;
+    const d = snap.data();
+    document.getElementById("lc-tier1-count").value  = d.tier1Count  || "";
+    document.getElementById("lc-tier1-reward").value = d.tier1Reward || "";
+    document.getElementById("lc-tier2-count").value  = d.tier2Count  || "";
+    document.getElementById("lc-tier2-reward").value = d.tier2Reward || "";
+  });
+
+  document.getElementById("btn-lc-save").addEventListener("click", async () => {
+    const tier1Count  = parseInt(document.getElementById("lc-tier1-count").value,  10);
+    const tier1Reward = document.getElementById("lc-tier1-reward").value.trim();
+    const tier2Count  = parseInt(document.getElementById("lc-tier2-count").value,  10);
+    const tier2Reward = document.getElementById("lc-tier2-reward").value.trim();
+    const msgEl = document.getElementById("lc-saved-msg");
+
+    if (!tier1Count || !tier1Reward || !tier2Count || !tier2Reward) {
+      msgEl.textContent = "All four fields are required.";
+      msgEl.style.color = "var(--pink)";
+      return;
+    }
+
+    await setDoc(doc(db, "settings", "loyaltyCard"), { tier1Count, tier1Reward, tier2Count, tier2Reward });
+    msgEl.style.color = "var(--accent)";
+    msgEl.textContent = "Saved!";
+    setTimeout(() => { msgEl.textContent = ""; }, 2000);
   });
 }
 

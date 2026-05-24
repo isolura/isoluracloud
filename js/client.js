@@ -94,6 +94,61 @@ async function initWelcome() {
     status.textContent = "Saved!";
     setTimeout(() => { status.textContent = ""; }, 2000);
   });
+
+  initLoyaltyCard();
+}
+
+// ── Loyalty Card ────────────────────────────────────────────────────────────
+
+function initLoyaltyCard() {
+  let loyaltyConfig  = null;
+  let doneCount      = 0;
+
+  function renderLoyalty() {
+    const el = document.getElementById("loyalty-card-widget");
+    if (!loyaltyConfig || (!loyaltyConfig.tier1Count && !loyaltyConfig.tier2Count)) {
+      el.innerHTML = "";
+      return;
+    }
+
+    const { tier1Count, tier1Reward, tier2Count, tier2Reward } = loyaltyConfig;
+    const target = doneCount < tier1Count ? tier1Count : doneCount < tier2Count ? tier2Count : tier2Count;
+    const progress = Math.min(doneCount, target);
+
+    const punches = Array.from({ length: target }, (_, i) => {
+      const filled = i < progress;
+      const milestone = (i + 1 === tier1Count) || (i + 1 === tier2Count);
+      return `<div class="punch${filled ? ' filled' : ''}${milestone ? ' milestone' : ''}" title="${i + 1}">${filled ? '★' : ''}</div>`;
+    }).join("");
+
+    let rewardMsg = "";
+    if (doneCount >= tier2Count) {
+      rewardMsg = `<div class="loyalty-reward-text">🎉 You've unlocked the special reward: <strong>${esc(tier2Reward)}</strong></div>`;
+    } else if (doneCount >= tier1Count) {
+      rewardMsg = `<div class="loyalty-reward-text">🎁 You've unlocked: <strong>${esc(tier1Reward)}</strong> · ${tier2Count - doneCount} more for the special reward!</div>`;
+    } else {
+      const next = tier1Count - doneCount;
+      rewardMsg = `<div class="loyalty-reward-text">${next} more commission${next !== 1 ? 's' : ''} to unlock: <strong>${esc(tier1Reward)}</strong></div>`;
+    }
+
+    el.innerHTML = `
+      <div class="loyalty-card">
+        <h3>Commission Card</h3>
+        <div class="loyalty-punches">${punches}</div>
+        ${rewardMsg}
+      </div>`;
+  }
+
+  onSnapshot(doc(db, "settings", "loyaltyCard"), (snap) => {
+    loyaltyConfig = snap.exists() ? snap.data() : null;
+    renderLoyalty();
+  });
+
+  const q = query(collection(db, "commissions"), where("clientUID", "==", currentUser.uid));
+  onSnapshot(q, (snap) => {
+    doneCount = snap.docs.filter(d => d.data().status === "done").length;
+    renderLoyalty();
+  });
 }
 
 // ── My Commissions tab ──────────────────────────────────────────────────────
